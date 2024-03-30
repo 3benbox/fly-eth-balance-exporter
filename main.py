@@ -98,8 +98,7 @@ def update_metrics():
                     balance_gauge.labels(
                         address=address.address,
                         address_name=address.name,
-                        network_name=network.name,
-                        updated_at=timestamp
+                        network_name=network.name
                     ).set(balance)  # Include timestamp
                 except web3_exceptions.Web3Exception as e:
                     logger.warning(
@@ -107,12 +106,11 @@ def update_metrics():
                     )
             logger.info(
                 f"Updated balance {address.name} as {address.address} on "
-                f"{network.name} at {timestamp}"
+                f"{network.name} at {timestamp} to {balance} wei"
             )
 
 
 async def metrics(request):
-    update_metrics()
     metrics_data = generate_latest()
     return Response(metrics_data, media_type="text/plain")
 
@@ -128,17 +126,19 @@ except SystemExit:
 
 balance_gauge = Gauge(
     'ethereum_balance', 'Ethereum Wallet Balance',
-    ['address', 'address_name', 'network_name', 'updated_at'])
+    ['address', 'address_name', 'network_name'])
 
 
 if __name__ == "__main__":
     import uvicorn
     import asyncio
 
+    update_metrics()
+
     async def periodic_task():
         while True:
-            update_metrics()
             await asyncio.sleep(config.update_interval_seconds)
+            update_metrics()
 
     @app.on_event("startup")
     async def startup_event():
