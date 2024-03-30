@@ -6,6 +6,7 @@ from starlette.responses import Response
 from starlette.routing import Route
 from web3 import Web3, exceptions as web3_exceptions
 import yaml
+import time
 from prometheus_client import generate_latest, Gauge
 
 # Configure logging
@@ -45,8 +46,9 @@ class Address(BaseModel):
 
 
 class Config(BaseModel):
-    addresses: List[Address] = Field(..., min_items=1)
-    networks: List[Network] = Field(..., min_items=1)
+    addresses: List[Address] = Field(..., min_length=1)
+    networks: List[Network] = Field(..., min_length=1)
+    update_interval_seconds: int = Field(..., ge=1)  # Ensure it's at least 60
 
 
 def load_config(filepath: str) -> Config:
@@ -59,32 +61,28 @@ def load_config(filepath: str) -> Config:
         raise SystemExit(e)
 
 
-try:
-    config = load_config('config.yaml')
-except SystemExit:
-    exit()
-
-
-balance_gauge = Gauge(
-    'ethereum_balance', 'Ethereum Wallet Balance',
-    ['address', 'address_name', 'network_name'])
-
-
 def update_metrics():
+    timestamp = str(int(time.time()))  # Get current time as a string
     for network in config.networks:
         w3 = Web3(Web3.HTTPProvider(network.rpc_endpoint))
         for address in config.addresses:
             if address.network == network.name:
                 try:
                     balance = w3.eth.get_balance(address.address)
-                    # balance_eth = Web3.fromWei(balance, 'ether')
                     balance_gauge.labels(
                         address=address.address,
                         address_name=address.name,
-                        network_name=network.name).set(balance)
+                        network_name=network.name,
+                        updated_at=timestamp
+                    ).set(balance)  # Include timestamp
                 except web3_exceptions.Web3Exception as e:
                     logger.warning(
-                        f"Failed to update balance for {address.address}: {e}")
+                        f"Failed to update balance for {address.address}: {e}"
+                    )
+            logger.info(
+                f"Updated balance {address.name} as {address.address} on "
+                f"{network.name} at {timestamp}"
+            )
 
 
 async def metrics(request):
@@ -97,6 +95,34 @@ app = Starlette(debug=True, routes=[
     Route('/metrics', metrics)
 ])
 
+try:
+    config = load_config('config.yaml')
+except SystemExit:
+    exit()
+
+balance_gauge = Gauge(
+    'ethereum_balance', 'Ethereum Wallet Balance',
+    ['address', 'address_name', 'network_name', 'updated_at'])
+
+
 if __name__ == "__main__":
     import uvicorn
+    import asyncio
+
+    async def periodic_task():
+        while True:
+            update_metrics()
+            await asyncio.sleep(config.update_interval_seconds)
+
+    @app.on_event("startup")
+    async def startup_event():
+        task = asyncio.create_task(periodic_task())
+        logger.info("Background task started")
+
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        task.cancel()
+        await task
+        logger.info("Background task stopped")
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
