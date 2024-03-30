@@ -1,0 +1,7 @@
+addresses:
+  - address: "0x449bA5c62A77da29031F56724fA1bF8aeC75Fa76"
+    name: doubtingben.eth
+    network: mainnet
+networks:
+  - name: mainnet
+    rpc_endpoint: https://sepolia.infura.io/v3/
