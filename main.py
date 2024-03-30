@@ -7,23 +7,13 @@ from starlette.routing import Route
 from web3 import Web3, exceptions as web3_exceptions
 import yaml
 import time
+import re
+import os
 from prometheus_client import generate_latest, Gauge
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def is_valid_ethereum_address(cls, v):
-    if not Web3.is_address(v):
-        raise ValueError('Must be a valid Ethereum address')
-    return v
-
-
-def is_prometheus_label_compatible(cls, v):
-    if any(c in v for c in ' "{}'):
-        raise ValueError('Must be Prometheus label compatible')
-    return v
 
 
 class Network(BaseModel):
@@ -61,11 +51,37 @@ class Config(BaseModel):
     update_interval_seconds: int = Field(..., ge=1)  # Ensure it's at least 60
 
 
+def substitute_env_variables(config_data: dict) -> dict:
+    """
+    Recursively search for environment variable placeholders in
+    the configuration
+    and replace them with actual environment variable values.
+    """
+    pattern = re.compile(r'\$\{(\w+)\}')  # Pattern to match ${VAR_NAME}
+
+    def replace(match):
+        env_var = match.group(1)
+        return os.getenv(env_var, f'${{{env_var}}}')  # Keep as is if not found
+
+    def search_replace(obj):
+        if isinstance(obj, dict):
+            return {k: search_replace(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [search_replace(element) for element in obj]
+        elif isinstance(obj, str):
+            return pattern.sub(replace, obj)
+        else:
+            return obj
+
+    return search_replace(config_data)
+
+
 def load_config(filepath: str) -> Config:
     try:
         with open(filepath, 'r') as file:
             config_data = yaml.safe_load(file)
-        return Config.parse_obj(config_data)
+        config_data = substitute_env_variables(config_data)
+        return Config.model_validate(config_data)
     except (FileNotFoundError, yaml.YAMLError, ValidationError) as e:
         logger.fatal(f"Error loading or validating config file: {e}")
         raise SystemExit(e)

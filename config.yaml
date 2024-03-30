@@ -4,4 +4,5 @@ addresses:
     network: mainnet
 networks:
   - name: mainnet
-    rpc_endpoint: https://sepolia.infura.io/v3/
+    rpc_endpoint: ${INFURA_SEPOLIA}
+update_interval_seconds: 60
