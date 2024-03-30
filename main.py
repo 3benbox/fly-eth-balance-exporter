@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from pydantic import BaseModel, Field, validator, ValidationError
+from pydantic import BaseModel, Field, field_validator, ValidationError
 from starlette.applications import Starlette
 from starlette.responses import Response
 from starlette.routing import Route
@@ -27,22 +27,32 @@ def is_prometheus_label_compatible(cls, v):
 
 
 class Network(BaseModel):
-    name: str = Field(..., min_length=1)
-    rpc_endpoint: str = Field(..., min_length=1)
+    name: str
+    rpc_endpoint: str
 
-    _name_validator = validator('name', allow_reuse=True)(
-        is_prometheus_label_compatible)
+    @field_validator('name')
+    def name_compatible_with_prometheus(cls, v):
+        if ' ' in v or '"' in v or '{' in v or '}' in v:
+            raise ValueError('name must be Prometheus label compatible')
+        return v
 
 
 class Address(BaseModel):
-    address: str = Field(..., min_length=1)
-    name: str = Field(..., min_length=1)
-    network: str = Field(..., min_length=1)
+    address: str
+    name: str
+    network: str
 
-    _address_validator = validator('address', allow_reuse=True)(
-        is_valid_ethereum_address)
-    _name_validator = validator('name', allow_reuse=True)(
-        is_prometheus_label_compatible)
+    @field_validator('address')
+    def address_is_valid_ethereum(cls, v):
+        if not Web3.is_address(v):
+            raise ValueError('address must be a valid Ethereum address')
+        return v
+
+    @field_validator('name')
+    def name_compatible_with_prometheus(cls, v):
+        if ' ' in v or '"' in v or '{' in v or '}' in v:
+            raise ValueError('name must be Prometheus label compatible')
+        return v
 
 
 class Config(BaseModel):
