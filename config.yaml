@@ -6,3 +6,4 @@ networks:
   - name: mainnet
     rpc_endpoint: ${INFURA_MAINNET}
 update_interval_seconds: 60
+static_bearer_token: ${STATIC_BEARER_TOKEN}
