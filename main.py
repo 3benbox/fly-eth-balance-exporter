@@ -135,10 +135,10 @@ def update_metrics():
                     logger.warning(
                         f"Failed to update balance for {address.address}: {e}"
                     )
-            logger.info(
-                f"Updated balance {address.name} as {address.address} on "
-                f"{network.name} at {timestamp} to {balance} wei"
-            )
+                logger.info(
+                    f"Updated balance {address.name} as {address.address} on "
+                    f"{network.name} at {timestamp} to {balance} wei"
+                )
 
 
 async def metrics(request):

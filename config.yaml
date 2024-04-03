@@ -2,8 +2,21 @@ addresses:
   - address: "0x449bA5c62A77da29031F56724fA1bF8aeC75Fa76"
     name: doubtingben.eth
     network: mainnet
+  - address: "0xaf65E45F4C0BD388F91EeB23cFCd52F4fCdd6Ee2"
+    name: cas_anchor
+    network: mainnet
+  - address: "0x1C124c86f7fc22e67974337E889a513b16a5703f"
+    name: cas_anchor
+    network: gnosis
+  - address: "0x85d4e0b71bB3B1155eEa18708e8cc699d09efa8c"
+    name: cas_anchor
+    network: sepolia
 networks:
   - name: mainnet
     rpc_endpoint: ${INFURA_MAINNET}
+  - name: sepolia
+    rpc_endpoint: ${INFURA_SEPOLIA}
+  - name: gnosis
+    rpc_endpoint: ${QUICKNODE_GNOSIS}
 update_interval_seconds: 60
 static_bearer_token: ${STATIC_BEARER_TOKEN}
