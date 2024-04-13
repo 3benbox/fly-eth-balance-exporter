@@ -33,6 +33,7 @@ class Address(BaseModel):
     address: str
     name: str
     network: str
+    cluster: str = None
 
     @field_validator("address")
     def address_is_valid_ethereum(cls, v):
@@ -128,6 +129,7 @@ def update_metrics():
                         address=address.address,
                         address_name=address.name,
                         network_name=network.name,
+                        cluster=address.cluster
                     ).set(
                         balance
                     )  # Include timestamp
@@ -172,7 +174,7 @@ else:
 balance_gauge = Gauge(
     "ethereum_balance",
     "Ethereum Wallet Balance",
-    ["address", "address_name", "network_name"],
+    ["address", "address_name", "network_name", "cluster"],
 )
 
 if __name__ == "__main__":

@@ -5,12 +5,15 @@ addresses:
   - address: "0xaf65E45F4C0BD388F91EeB23cFCd52F4fCdd6Ee2"
     name: cas_anchor
     network: mainnet
+    cluster: ceramic-prod
   - address: "0x1C124c86f7fc22e67974337E889a513b16a5703f"
     name: cas_anchor
     network: gnosis
+    cluster: ceramic-tnet
   - address: "0x85d4e0b71bB3B1155eEa18708e8cc699d09efa8c"
     name: cas_anchor
     network: sepolia
+    cluster: ceramic-qa
 networks:
   - name: mainnet
     rpc_endpoint: ${INFURA_MAINNET}
