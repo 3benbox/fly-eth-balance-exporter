@@ -37,9 +37,13 @@ class Address(BaseModel):
 
     @field_validator("address")
     def address_is_valid_ethereum(cls, v):
-        if not Web3.is_address(v):
-            raise ValueError("address must be a valid Ethereum address")
-        return v
+        try:
+            checksum_address = Web3.to_checksum_address(v)
+            if not Web3.is_address(checksum_address):
+                raise ValueError("address must be a valid Ethereum address")
+            return checksum_address
+        except ValueError:
+            raise ValueError("Invalid Ethereum address format")
 
     @field_validator("name")
     def name_compatible_with_prometheus(cls, v):
