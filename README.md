@@ -4,7 +4,9 @@ Prometheus exporter of Ethereum account balances using the Fly.io platform.
 
 ## Configure
 
-Update the `config.yaml` file with the Ethereum addresses you want to monitor.
+Update the example `config.yaml` file with the Ethereum addresses you want to monitor.
+
+Set the `ETH_BALANCE_CONFIG_PATH` environment variable to the path of the `config.yaml` file.
 
 Sensitive value can be resolved through environment variables with the `${VAR}` syntax.
 

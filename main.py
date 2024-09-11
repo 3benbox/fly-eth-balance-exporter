@@ -110,13 +110,21 @@ def substitute_env_variables(config_data: dict) -> dict:
     return search_replace(config_data)
 
 
-def load_config(filepath: str) -> Config:
+def load_config() -> Config:
+    config_path = os.getenv('ETH_BALANCE_CONFIG_PATH')
+    if not config_path:
+        logger.fatal("ETH_BALANCE_CONFIG_PATH environment variable is not set")
+        raise SystemExit("ETH_BALANCE_CONFIG_PATH environment variable is not set")
+
     try:
-        with open(filepath, "r") as file:
+        with open(config_path, "r") as file:
             config_data = yaml.safe_load(file)
         config_data = substitute_env_variables(config_data)
         return Config.model_validate(config_data)
-    except (FileNotFoundError, yaml.YAMLError, ValidationError) as e:
+    except FileNotFoundError:
+        logger.fatal(f"Config file not found at path: {config_path}")
+        raise SystemExit(f"Config file not found at path: {config_path}")
+    except (yaml.YAMLError, ValidationError) as e:
         logger.fatal(f"Error loading or validating config file: {e}")
         raise SystemExit(e)
 
@@ -153,7 +161,7 @@ async def metrics(request):
 
 
 try:
-    config = load_config("config.yaml")
+    config = load_config()
 except SystemExit:
     exit()
 
